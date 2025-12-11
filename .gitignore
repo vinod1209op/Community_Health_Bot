@@ -1,6 +1,4 @@
 .env
-.env.*
-.env.local
 .envrc
 config.yaml
 .venv
@@ -12,5 +10,3 @@ logs/
 dist/
 build/
 .pytest_cache/
-.env
-.env
