@@ -1,12 +1,17 @@
-Community Health Bot (Reddit)
+Community_Health_Bot (Reddit)
 =============================
 
 Purpose
 -------
-- Read-only analytics helper for a small, fixed set of subreddits (example: `r/example1`, `r/example2`) to support moderators/community managers.
+- Read-only analytics helper for a small, fixed set of subreddits to support moderators/community managers.
 - Generates weekly summaries (top posts, engagement stats, unanswered questions) and optionally posts the summary once per week with moderator approval.
 - No DMs, no voting/karma actions, no cross-posting or spam. Scope is limited to the listed subreddits.
 - Endpoints/actions: read-only (`/r/{sub}/top`, `/r/{sub}/new`) + optional weekly post. Frequency: hourly reads (configurable), weekly post max 1x/week.
+
+Starter files
+-------------
+- Copy `.env.example` to `.env` and fill in your Reddit script credentials.
+- Copy `config.example.yaml` to `config.yaml` and adjust subreddit names/limits as needed.
 
 Project layout
 --------------
@@ -34,13 +39,6 @@ src/
       history.py              # Metrics history storage/lookup
       logging.py              # Structured logging helpers
 ```
-
-Why not Devvit?
----------------
-- Needs server-side scheduled aggregation across multiple subreddits with external alerting/exports.
-- Current Devvit flow does not cover scheduled cross-subreddit aggregation plus optional weekly post outside their execution environment.
- - External delivery (webhooks) and cron-style scheduling are outside Devvit scope.
-
 Data handling and compliance
 ----------------------------
 - Only fetches public posts/comments.
@@ -63,10 +61,12 @@ Local setup
 -----------
 1) Python 3.9+ recommended.
 2) `python -m venv .venv && source .venv/bin/activate`
-3) `pip install -r requirements.txt` (or `pip install .[dev]` from the repo root)
-4) Fill in `.env` with your Reddit script creds (client id/secret, bot username/password, descriptive user agent).
-5) Run: `PYTHONPATH=src python3 -m community_health_bot.cli --subreddits r/techsupport r/linuxquestions r/HomeNetworking r/sysadmin r/InformationTechnology r/Office365 --mode report --config config.yaml`
+3) Install base deps: `pip install -r requirements.txt` (or `pip install .[dev]` from the repo root).
+   - UI optional: `pip install -r requirements-ui.txt` or `pip install .[ui]`
+4) Fill in `.env` (copy from `.env.example`) with your Reddit script creds (client id/secret, bot username/password, descriptive user agent).
+5) Run: `PYTHONPATH=src python3 -m community_health_bot.cli --env-file ./.env --subreddits r/techsupport r/linuxquestions r/HomeNetworking r/sysadmin r/InformationTechnology r/Office365 --mode report --config config.yaml`
 6) Optional: install as a CLI via `pipx install .` (or `pip install .`), then run `community-health-bot --help`
+7) Optional UI: `streamlit run src/community_health_bot/ui/app.py` (if not installed, prepend `PYTHONPATH=src`)
 
 Configuration
 -------------
@@ -82,11 +82,20 @@ Environment variables (see `.env`):
 
 Usage
 -----
+- Check version: `PYTHONPATH=src python3 -m community_health_bot.cli --version`
+- CLI entrypoint module: `PYTHONPATH=src python3 -m community_health_bot --help`
+- Dry-run with mock data (no Reddit calls): `PYTHONPATH=src python3 -m community_health_bot.cli --mock-data --subreddits r/example --mode report`
 - Report-only (no posting):
-  `PYTHONPATH=src python3 -m community_health_bot.cli --subreddits r/techsupport r/linuxquestions r/HomeNetworking r/sysadmin r/InformationTechnology r/Office365 --mode report --config config.yaml`
+  `PYTHONPATH=src python3 -m community_health_bot.cli --env-file ./.env --subreddits r/techsupport r/linuxquestions r/HomeNetworking r/sysadmin r/InformationTechnology r/Office365 --mode report --config config.yaml`
 - Post weekly summary (requires `submit` scope and mod approval):
-  `PYTHONPATH=src python3 -m community_health_bot.cli --subreddits r/techsupport r/linuxquestions r/HomeNetworking r/sysadmin r/InformationTechnology r/Office365 --mode post --post-to r/techsupport --config config.yaml`
+  `PYTHONPATH=src python3 -m community_health_bot.cli --env-file ./.env --subreddits r/techsupport r/linuxquestions r/HomeNetworking r/sysadmin r/InformationTechnology r/Office365 --mode post --post-to r/techsupport --config config.yaml`
 - The CLI backs off automatically when `X-Ratelimit-Remaining` is low, using `X-Ratelimit-Reset` plus a small buffer.
+
+Auth troubleshooting
+--------------------
+- 401 errors: verify `REDDIT_CLIENT_ID/SECRET` are from a **script** app, and `REDDIT_USERNAME/PASSWORD` are the bot’s real creds (2FA disabled on that account). Keep `USER_AGENT` descriptive (e.g., `server:community-health-bot:0.1.0 (by /u/your_bot)`).
+- 403 errors on posting: bot account needs `submit` scope and moderator approval in the target subreddit; confirm the app is authorized and not banned.
+- Rate limit: if `X-Ratelimit-Remaining` is low, the CLI sleeps automatically; consider lowering poll frequency or subreddit count.
 
 What it does
 ------------
@@ -101,9 +110,16 @@ Docker
 ------
 Build/run locally:
 ```
-docker build -t community-health-bot .
-docker run --rm -v $(pwd)/.env:/app/.env community-health-bot --help
+docker build -t community_health_bot .
+docker run --rm -v $(pwd)/.env:/app/.env community_health_bot --help
 ```
+
+Streamlit UI
+------------
+- Install UI deps: `pip install streamlit`
+- Run: `streamlit run src/community_health_bot/ui/app.py` (if not installed, prepend `PYTHONPATH=src`)
+- Provide `.env` and `config.yaml` paths in the UI, choose subreddits/mode, and generate summaries.
+ - Toggle "Use mock data" to preview summaries without Reddit credentials/API calls.
 
 Notes
 -----

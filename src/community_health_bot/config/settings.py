@@ -35,7 +35,9 @@ class Settings:
     webhook_url: Optional[str] = None
 
 
-def load_settings(env_file: Optional[Path] = None, config_file: Optional[Path] = None) -> Settings:
+def load_settings(
+    env_file: Optional[Path] = None, config_file: Optional[Path] = None, allow_missing: bool = False
+) -> Settings:
     if env_file:
         load_dotenv(dotenv_path=env_file)
     else:
@@ -49,18 +51,18 @@ def load_settings(env_file: Optional[Path] = None, config_file: Optional[Path] =
         "USER_AGENT",
     ]
     missing = [key for key in required if not os.getenv(key)]
-    if missing:
+    if missing and not allow_missing:
         sys.exit(f"Missing environment variables: {', '.join(missing)}")
 
     output_dir = Path(os.getenv("OUTPUT_DIR", "./output")).expanduser()
     subreddit_configs = _load_subreddit_configs(config_file)
 
     return Settings(
-        client_id=os.getenv("REDDIT_CLIENT_ID", ""),
-        client_secret=os.getenv("REDDIT_CLIENT_SECRET", ""),
-        username=os.getenv("REDDIT_USERNAME", ""),
-        password=os.getenv("REDDIT_PASSWORD", ""),
-        user_agent=os.getenv("USER_AGENT", ""),
+        client_id=os.getenv("REDDIT_CLIENT_ID", "mock_client_id" if allow_missing else ""),
+        client_secret=os.getenv("REDDIT_CLIENT_SECRET", "mock_client_secret" if allow_missing else ""),
+        username=os.getenv("REDDIT_USERNAME", "mock_user" if allow_missing else ""),
+        password=os.getenv("REDDIT_PASSWORD", "mock_password" if allow_missing else ""),
+        user_agent=os.getenv("USER_AGENT", "server:community-health-bot:mock (by /u/mock)" if allow_missing else ""),
         output_dir=output_dir,
         subreddit_configs=subreddit_configs,
         webhook_url=os.getenv("WEBHOOK_URL"),

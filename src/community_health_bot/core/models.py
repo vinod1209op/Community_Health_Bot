@@ -45,6 +45,14 @@ class SubredditReport:
     trends: List[Trend]
     aging_unanswered: List[UnansweredSummary] = field(default_factory=list)
     history: List["HistoryEntry"] = field(default_factory=list)
+    include_sections: Dict[str, bool] = field(
+        default_factory=lambda: {
+            "stats": True,
+            "trends": True,
+            "top_posts": True,
+            "unanswered": True,
+        }
+    )
 
 
 # Convenience factory for empty counters when needed.

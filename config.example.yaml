@@ -1,0 +1,17 @@
+subreddits:
+  - name: r/example1
+    top_posts_limit: 6
+    unanswered_limit: 8
+    include_sections:
+      stats: true
+      trends: true
+      top_posts: true
+      unanswered: true
+  - name: r/example2
+    top_posts_limit: 6
+    unanswered_limit: 8
+    include_sections:
+      stats: true
+      trends: true
+      top_posts: true
+      unanswered: true

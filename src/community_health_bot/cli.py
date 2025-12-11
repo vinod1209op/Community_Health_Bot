@@ -14,10 +14,20 @@ from .services.rate_limit import maybe_backoff_if_low
 from .services.publisher import submit_summary
 from .services.reporting import build_markdown, write_output
 from .services.webhook import send_webhook
+from .services.mock_data import generate_mock_report
+
+
+from . import __version__
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Community health bot.")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
+    parser.add_argument(
+        "--env-file",
+        type=str,
+        help="Path to .env file (defaults to .env in the current directory)",
+    )
     parser.add_argument(
         "--subreddits",
         nargs="+",
@@ -45,14 +55,21 @@ def parse_args() -> argparse.Namespace:
         type=str,
         help="Path to YAML config for per-subreddit settings",
     )
+    parser.add_argument(
+        "--mock-data",
+        action="store_true",
+        help="Generate mock data instead of calling Reddit (good for testing output)",
+    )
     return parser.parse_args()
 
 
 def run() -> None:
     args = parse_args()
     config_path = Path(args.config).expanduser() if args.config else None
-    settings = load_settings(config_file=config_path)
-    validate_user_agent(settings.user_agent)
+    env_path = Path(args.env_file).expanduser() if args.env_file else None
+    settings = load_settings(env_file=env_path, config_file=config_path, allow_missing=args.mock_data)
+    if not args.mock_data:
+        validate_user_agent(settings.user_agent)
     logger = setup_logger()
     run_date = datetime.now().date().isoformat()
     history_path = settings.output_dir / "metrics_history.csv"
@@ -61,21 +78,31 @@ def run() -> None:
 
     if args.mode == "post" and not args.post_to:
         raise SystemExit("--post-to is required in post mode")
+    if args.mock_data and args.mode == "post":
+        raise SystemExit("--mock-data can only be used in report mode")
 
-    reddit = create_reddit_client(settings)
+    reddit = None if args.mock_data else create_reddit_client(settings)
     reports: Dict[str, SubredditReport] = {}
 
     for name in args.subreddits:
         sub_cfg: SubredditConfig = settings.subreddit_configs.get(
             name, SubredditConfig(name=name, top_posts_limit=args.limit)
         )
-        report = collect_weekly_report(
-            reddit,
-            name,
-            top_posts_limit=sub_cfg.top_posts_limit,
-            unanswered_limit=sub_cfg.unanswered_limit,
-            include_sections=sub_cfg.include_sections,
-        )
+        if args.mock_data:
+            report = generate_mock_report(
+                name,
+                top_posts_limit=sub_cfg.top_posts_limit,
+                unanswered_limit=sub_cfg.unanswered_limit,
+                include_sections=sub_cfg.include_sections,
+            )
+        else:
+            report = collect_weekly_report(
+                reddit,
+                name,
+                top_posts_limit=sub_cfg.top_posts_limit,
+                unanswered_limit=sub_cfg.unanswered_limit,
+                include_sections=sub_cfg.include_sections,
+            )
         report.history = recent_history_for_subreddit(existing_history, name)
         reports[name] = report
         new_history_entries.append(
@@ -88,7 +115,8 @@ def run() -> None:
                 median_ttf_minutes=report.metrics.median_time_to_first_comment_minutes,
             )
         )
-        maybe_backoff_if_low(reddit, logger)
+        if reddit:
+            maybe_backoff_if_low(reddit, logger)
 
     append_history(history_path, new_history_entries)
 
@@ -107,7 +135,8 @@ def run() -> None:
         print(f"Posted summary to {permalink}")
         log_json(logger, "posted_summary", permalink=permalink, subreddit=args.post_to)
 
-    log_rate_limit(logger, reddit)
+    if reddit:
+        log_rate_limit(logger, reddit)
     send_webhook(settings.webhook_url, "Community Health Summary", markdown[:1500])
 
 

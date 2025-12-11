@@ -19,6 +19,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8.2.2"]
+ui = ["streamlit==1.40.1"]
 
 [project.scripts]
 community-health-bot = "community_health_bot.cli:run"

@@ -2,8 +2,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
-from typing import Dict as TypingDict
-
 from ..core.models import HistoryEntry, SubredditReport, Trend, UnansweredSummary
 
 
@@ -80,7 +78,7 @@ def build_markdown(subreddit_names: Iterable[str], reports: Dict[str, SubredditR
         lines.append(f"\n## {name}")
 
         # Decide which sections to show; default to all if not provided.
-        include_sections: TypingDict[str, bool] = getattr(report, "include_sections", {}) or {
+        include_sections: Dict[str, bool] = getattr(report, "include_sections", {}) or {
             "stats": True,
             "trends": True,
             "top_posts": True,

@@ -169,13 +169,12 @@ def collect_weekly_report(
         aging_unanswered=aging_unanswered,
         metrics=metrics,
         trends=trends,
+        include_sections=include_sections
+        or {
+            "stats": True,
+            "trends": True,
+            "top_posts": True,
+            "unanswered": True,
+        },
     )
-
-    # Attach include_sections to the report so reporting can honor config toggles.
-    report.include_sections = include_sections or {
-        "stats": True,
-        "trends": True,
-        "top_posts": True,
-        "unanswered": True,
-    }
     return report
