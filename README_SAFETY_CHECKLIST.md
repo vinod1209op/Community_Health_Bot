@@ -1,0 +1,12 @@
+Safety & compliance checklist
+-----------------------------
+- Scope: limit to declared subreddits; no DMs, no voting/karma actions, no cross-posting.
+- Transparency: descriptive User-Agent (`server:app-name:version (by /u/botuser)`); use dedicated bot account.
+- Frequency: keep reads modest (e.g., hourly) and posts max weekly. Monitor `X-Ratelimit-*` headers.
+- Data handling: only public content; transient processing; purge summaries/logs within 48h; honor deletions immediately.
+- No commercialization or AI training: do not sell/share data, do not train models, no ads targeting.
+- Devvit rationale: needs scheduled cross-subreddit aggregation, webhook delivery, and cron-based runs outside Devvit.
+- Logging: keep structured logs minimal and scrub PII; rotate and purge.
+- Config hygiene: validate `.env` (no placeholders), commit only `.env.example`/`config.example.yaml`, never secrets.
+- Posting: only if moderators approve; default to report-only.
+- Subreddit permissions: if you are not a moderator, obtain written mod approval before operating the bot.
