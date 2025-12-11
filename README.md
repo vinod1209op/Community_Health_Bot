@@ -64,8 +64,8 @@ Local setup
 1) Python 3.9+ recommended.
 2) `python -m venv .venv && source .venv/bin/activate`
 3) `pip install -r requirements.txt` (or `pip install .[dev]` from the repo root)
-4) Copy `.env.example` to `.env` and fill in values.
-5) Run: `PYTHONPATH=src python3 -m community_health_bot.cli --subreddits r/example1 r/example2 --mode report`
+4) Fill in `.env` with your Reddit script creds (client id/secret, bot username/password, descriptive user agent).
+5) Run: `PYTHONPATH=src python3 -m community_health_bot.cli --subreddits r/techsupport r/linuxquestions r/HomeNetworking r/sysadmin r/InformationTechnology r/Office365 --mode report --config config.yaml`
 6) Optional: install as a CLI via `pipx install .` (or `pip install .`), then run `community-health-bot --help`
 
 Configuration
@@ -83,9 +83,9 @@ Environment variables (see `.env`):
 Usage
 -----
 - Report-only (no posting):
-  `PYTHONPATH=src python3 -m community_health_bot.cli --subreddits r/example1 r/example2 --mode report --config config.example.yaml`
+  `PYTHONPATH=src python3 -m community_health_bot.cli --subreddits r/techsupport r/linuxquestions r/HomeNetworking r/sysadmin r/InformationTechnology r/Office365 --mode report --config config.yaml`
 - Post weekly summary (requires `submit` scope and mod approval):
-  `PYTHONPATH=src python3 -m community_health_bot.cli --subreddits r/example1 r/example2 --mode post --post-to r/example1 --config config.example.yaml`
+  `PYTHONPATH=src python3 -m community_health_bot.cli --subreddits r/techsupport r/linuxquestions r/HomeNetworking r/sysadmin r/InformationTechnology r/Office365 --mode post --post-to r/techsupport --config config.yaml`
 - The CLI backs off automatically when `X-Ratelimit-Remaining` is low, using `X-Ratelimit-Reset` plus a small buffer.
 
 What it does
